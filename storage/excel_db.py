@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
+from os import replace
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from threading import RLock
 from typing import Any, Iterable
 
@@ -88,6 +90,8 @@ class ExcelDB:
             "descricao",
         ],
     }
+
+    LAST_ORDER_ID = "orders.last_id"
 
     FEATURE_DEFAULTS: dict[str, tuple[str, str]] = {
         "ac1": ("1", "AC1 · Produtos"),
@@ -225,6 +229,16 @@ class ExcelDB:
     def _save_workbook(self, workbook) -> None:
         workbook.save(self.path)
         workbook.close()
+
+    def _save_order_deletion(self, workbook) -> None:
+        with NamedTemporaryFile(dir=self.path.parent, suffix=".xlsx", delete=False) as temporary:
+            staged_path = Path(temporary.name)
+        try:
+            workbook.save(staged_path)
+            replace(staged_path, self.path)
+        finally:
+            staged_path.unlink(missing_ok=True)
+            workbook.close()
 
     def list_records(self, sheet_name: str, active_only: bool = False) -> list[dict[str, Any]]:
         with self._lock:
@@ -427,7 +441,12 @@ class ExcelDB:
                 product_map = {
                     self._as_id(product.get("id")): product for product in products
                 }
-                order_id = self._next_id(orders)
+                settings = self._read_sheet(workbook, "Configuracoes")
+                last_deleted_id = next(
+                    (self._as_id(row["valor"]) for row in settings if row["chave"] == self.LAST_ORDER_ID),
+                    None,
+                )
+                order_id = max(self._next_id(orders), (last_deleted_id or 0) + 1)
                 total = 0.0
                 new_items: list[dict[str, Any]] = []
                 next_item_id = self._next_id(order_items)
@@ -526,12 +545,55 @@ class ExcelDB:
                 raise
 
     def cancel_order(self, order_id: int) -> dict[str, Any]:
-        order = self.get("Pedidos", order_id)
-        if not order:
-            raise DataError("Pedido não encontrado.")
-        if str(order.get("status")).upper() != "ABERTO":
-            raise DataError("Somente pedidos abertos podem ser cancelados.")
-        return self.update("Pedidos", order_id, {"status": "CANCELADO"})
+        with self._lock:
+            order = self.get("Pedidos", order_id)
+            if not order:
+                raise DataError("Pedido não encontrado.")
+            if str(order.get("status")).upper() != "ABERTO":
+                raise DataError("Somente pedidos abertos podem ser cancelados.")
+            return self.update("Pedidos", order_id, {"status": "CANCELADO"})
+
+    def delete_order(self, order_id: int) -> dict[str, Any]:
+        with self._lock:
+            workbook = load_workbook(self.path)
+            try:
+                orders = self._read_sheet(workbook, "Pedidos")
+                order = next((row for row in orders if self._as_id(row["id"]) == order_id), None)
+                if order is None:
+                    raise DataError("Pedido não encontrado.")
+
+                items = self._read_sheet(workbook, "ItensPedido")
+                if str(order["status"]).upper() == "CONFIRMADO":
+                    products = self._read_sheet(workbook, "Produtos")
+                    products_by_id = {self._as_id(row["id"]): row for row in products}
+                    for item in items:
+                        if self._as_id(item["id_pedido"]) != order_id:
+                            continue
+                        product = products_by_id.get(self._as_id(item["id_produto"]))
+                        if product is None:
+                            raise DataError("Não foi possível devolver o estoque: produto do pedido não encontrado.")
+                        product["estoque"] = int(product["estoque"] or 0) + int(item["quantidade"])
+                    self._write_sheet(workbook, "Produtos", products)
+
+                # Preserve order numbers so stale links and repeated requests cannot affect a new order.
+                settings = self._read_sheet(workbook, "Configuracoes")
+                sequence = next((row for row in settings if row["chave"] == self.LAST_ORDER_ID), None)
+                if sequence is None:
+                    sequence = {"chave": self.LAST_ORDER_ID, "descricao": "Maior ID de pedido excluído"}
+                    settings.append(sequence)
+                sequence["valor"] = max(self._as_id(sequence.get("valor")) or 0, order_id)
+                self._write_sheet(workbook, "Configuracoes", settings)
+                self._write_sheet(workbook, "Pedidos", [
+                    row for row in orders if self._as_id(row["id"]) != order_id
+                ])
+                self._write_sheet(workbook, "ItensPedido", [
+                    item for item in items if self._as_id(item["id_pedido"]) != order_id
+                ])
+                self._save_order_deletion(workbook)
+                return order
+            except Exception:
+                workbook.close()
+                raise
 
     def order_details(self, order_id: int) -> dict[str, Any] | None:
         order = self.get("Pedidos", order_id)

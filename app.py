@@ -679,6 +679,19 @@ def cancel_order(order_id: int):
     return redirect(url_for("view_order", order_id=order_id))
 
 
+@app.post("/pedidos/<int:order_id>/excluir")
+@feature_required("final")
+def delete_order(order_id: int):
+    try:
+        order = db.delete_order(order_id)
+        flash(f"Pedido {order['numero']} excluído com sucesso.", "success")
+    except DataError as exc:
+        flash(str(exc), "error")
+    except PermissionError:
+        flash("Não foi possível excluir o pedido. Feche a planilha do sistema e tente novamente.", "error")
+    return redirect(url_for("orders"))
+
+
 @app.route("/documentacao")
 @feature_required("final")
 def documentation():

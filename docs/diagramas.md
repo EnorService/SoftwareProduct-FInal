@@ -1,26 +1,13 @@
-# Diagramas
+# Diagramas da Lanchonete Ágil
 
-Os arquivos `.puml` podem ser abertos no VSCode com uma extensão PlantUML ou em qualquer ferramenta compatível.
+Abra [Diagramas_Lanchonete_Agil.pdf](Diagramas_Lanchonete_Agil.pdf) para consultar os três diagramas.
 
-## Relacionamentos principais
+1. **Classes.** Mostra a classe de persistência `ExcelDB`, a exceção `DataError` e os registros lógicos que o Python representa como dicionários.
+2. **Casos de uso.** Mostra as operações de atendimento e administração. Operador representa quem usa os módulos habilitados. A senha administrativa protege o painel que configura esses módulos.
+3. **MER.** Representa as sete abas de `data/lanchonete.xlsx`. PK e FK representam chaves lógicas. O código Python mantém os relacionamentos e o Excel armazena os registros. A aba `Configuracoes` tem chaves próprias e fica sem relacionamento com as demais.
 
-```mermaid
-classDiagram
-    Fornecedor "1" --> "0..*" Produto : fornece
-    Cliente "1" --> "0..*" Pedido : realiza
-    Filial "1" --> "0..*" Pedido : recebe
-    Pedido "1" *-- "1..*" ItemPedido : possui
-    Produto "1" --> "0..*" ItemPedido : compõe
-```
+Os arquivos `.dot` são os fontes do PDF e podem ser editados com ferramentas compatíveis com Graphviz. Classes e casos de uso também estão disponíveis em PlantUML.
 
-## Fluxo de efetivação
+Ao criar um pedido, o sistema grava os itens e o total com status **ABERTO**. A efetivação valida o estoque, dá baixa nas quantidades e muda o status para **CONFIRMADO**. O cancelamento de um pedido aberto muda o status para **CANCELADO**.
 
-```mermaid
-flowchart LR
-    A[Pedido aberto] --> B[Adicionar produtos]
-    B --> C[Calcular total]
-    C --> D{Estoque suficiente?}
-    D -- Não --> E[Informar pendência]
-    D -- Sim --> F[Baixar estoque]
-    F --> G[Pedido confirmado]
-```
+Na lista de pedidos, a exclusão remove o pedido e seus itens. Quando o pedido está **CONFIRMADO**, a exclusão devolve as quantidades ao estoque. O sistema conserva o maior identificador excluído em `Configuracoes` para evitar reutilizar números de pedido.

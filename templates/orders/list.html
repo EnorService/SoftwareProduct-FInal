@@ -6,9 +6,21 @@
 <section class="panel">
     <div class="toolbar"><div class="filter-chips"><a class="filter-chip {{ 'selected' if not status else '' }}" href="{{ url_for('orders') }}">Todos</a><a class="filter-chip {{ 'selected' if status == 'ABERTO' else '' }}" href="{{ url_for('orders', status='ABERTO') }}">Abertos</a><a class="filter-chip {{ 'selected' if status == 'CONFIRMADO' else '' }}" href="{{ url_for('orders', status='CONFIRMADO') }}">Confirmados</a><a class="filter-chip {{ 'selected' if status == 'CANCELADO' else '' }}" href="{{ url_for('orders', status='CANCELADO') }}">Cancelados</a></div><span class="result-count">{{ rows|length }} pedido(s)</span></div>
     {% if rows %}
-        <div class="table-wrap"><table><thead><tr><th>Número</th><th>Cliente</th><th>Filial</th><th>Data</th><th>Total</th><th>Status</th><th class="actions-cell">Ações</th></tr></thead><tbody>{% for row in rows %}<tr><td><strong>{{ row.numero }}</strong></td><td>{{ row.cliente_nome }}</td><td>{{ row.filial_nome }}</td><td>{{ row.data_pedido|date_br }}</td><td>{{ row.total|money }}</td><td><span class="pill {{ row.status|lower }}">{{ row.status }}</span></td><td class="actions-cell"><a class="icon-button view" title="Visualizar pedido" aria-label="Visualizar pedido" href="{{ url_for('view_order', order_id=row.id) }}"><span class="material-symbols-outlined">visibility</span></a></td></tr>{% endfor %}</tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Número</th><th>Cliente</th><th>Filial</th><th>Data</th><th>Total</th><th>Status</th><th class="actions-cell">Ações</th></tr></thead><tbody>{% for row in rows %}<tr><td><strong>{{ row.numero }}</strong></td><td>{{ row.cliente_nome }}</td><td>{{ row.filial_nome }}</td><td>{{ row.data_pedido|date_br }}</td><td>{{ row.total|money }}</td><td><span class="pill {{ row.status|lower }}">{{ row.status }}</span></td><td class="actions-cell"><div class="row-actions"><a class="icon-button view" title="Visualizar pedido" aria-label="Visualizar pedido" href="{{ url_for('view_order', order_id=row.id) }}"><span class="material-symbols-outlined">visibility</span></a>
+            <button class="icon-button delete" type="button" title="Excluir pedido" aria-label="Excluir pedido {{ row.numero }}" data-delete-trigger data-delete-url="{{ url_for('delete_order', order_id=row.id) }}" data-delete-name="{{ row.numero }}"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></div></td></tr>{% endfor %}</tbody></table></div>
     {% else %}
         <div class="empty-state"><span class="material-symbols-outlined">receipt_long</span><strong>Nenhum pedido encontrado</strong><p>Crie um pedido para visualizar o fluxo de efetivação.</p><a class="button primary small" href="{{ url_for('new_order') }}"><span class="material-symbols-outlined">add</span>Criar pedido</a></div>
     {% endif %}
 </section>
+<dialog class="delete-dialog" id="delete-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
+    <form method="post" id="delete-dialog-form">
+        <div class="delete-dialog-icon"><span class="material-symbols-outlined" aria-hidden="true">delete</span></div>
+        <h3 id="delete-dialog-title">Excluir pedido?</h3>
+        <p id="delete-dialog-description">O pedido <strong id="delete-dialog-name"></strong> e seus itens serão excluídos definitivamente. Se o pedido estiver confirmado, as quantidades serão devolvidas ao estoque.</p>
+        <div class="delete-dialog-actions">
+            <button class="button secondary" type="button" data-close-delete-dialog autofocus>Cancelar</button>
+            <button class="button danger" type="submit">Confirmar exclusão</button>
+        </div>
+    </form>
+</dialog>
 {% endblock %}

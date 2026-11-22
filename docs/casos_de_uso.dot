@@ -1,0 +1,36 @@
+digraph {
+    graph [label="Lanchonete Ágil | Diagrama de casos de uso" labelloc=t fontsize=22 fontname="DejaVu Sans" pad=0.3 nodesep=0.45 ranksep=0.8];
+    node [fontname="DejaVu Sans" fontsize=10 color="#536277"];
+    edge [fontname="DejaVu Sans" fontsize=9 color="#536277" dir=none];
+    graph [rankdir=LR];
+subgraph cluster_sistema { label="Sistema Lanchonete Ágil"; color="#536277"; node [shape=ellipse style=filled fillcolor="#E6F1FE"];
+dashboard [label="Consultar painel"];
+produtos [label="Gerenciar produtos"];
+clientes [label="Gerenciar clientes"];
+fornecedores [label="Gerenciar fornecedores"];
+filiais [label="Gerenciar filiais"];
+criar [label="Criar pedido"];
+consultar [label="Listar e visualizar pedidos"];
+efetivar [label="Efetivar pedido"];
+cancelar [label="Cancelar pedido"];
+excluir [label="Excluir pedido"];
+estoque [label="Validar estoque"];
+login [label="Acessar painel administrativo"];
+configurar [label="Configurar funcionalidades"];
+}
+operador [shape=plaintext label="«ator»\nOperador"];
+operador -> dashboard;
+operador -> produtos;
+operador -> clientes;
+operador -> fornecedores;
+operador -> filiais;
+operador -> criar;
+operador -> consultar;
+operador -> efetivar;
+operador -> cancelar;
+operador -> excluir;
+admin [shape=plaintext label="«ator»\nAdministrador"];
+admin -> login;
+admin -> configurar;
+efetivar -> estoque [dir=forward arrowhead=open style=dashed label="«include»"];
+    }

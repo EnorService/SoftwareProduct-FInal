@@ -1,63 +1,86 @@
 @startuml
 skinparam classAttributeIconSize 0
-
-class Produto {
+class ExcelDB {
+  +path: Path
+  +create_order(client_id, branch_id, items, observation)
+  +order_details(order_id)
+  +finalize_order(order_id)
+  +cancel_order(order_id)
+  +delete_order(order_id)
+}
+class DataError <<exception>>
+ExcelDB ..> DataError : sinaliza erros
+class Produto <<registro lógico>> {
   +id: int
-  +nome: string
-  +descricao: string
-  +categoria: string
-  +preco: decimal
+  +nome: str
+  +descricao: str
+  +categoria: str
+  +preco: float
   +estoque: int
+  +id_fornecedor: int
   +ativo: bool
+  +criado_em: str
 }
-
-class Cliente {
+class Cliente <<registro lógico>> {
   +id: int
-  +nome: string
-  +cpf: string
-  +telefone: string
-  +email: string
+  +nome: str
+  +cpf: str
+  +telefone: str
+  +email: str
+  +endereco: str
   +ativo: bool
+  +criado_em: str
 }
-
-class Fornecedor {
+class Fornecedor <<registro lógico>> {
   +id: int
-  +nome: string
-  +cnpj: string
-  +telefone: string
-  +email: string
+  +nome: str
+  +cnpj: str
+  +telefone: str
+  +email: str
+  +endereco: str
   +ativo: bool
+  +criado_em: str
 }
-
-class Filial {
+class Filial <<registro lógico>> {
   +id: int
-  +nome: string
-  +cnpj: string
-  +cidade: string
-  +uf: string
+  +nome: str
+  +cnpj: str
+  +telefone: str
+  +endereco: str
+  +cidade: str
+  +uf: str
   +ativo: bool
+  +criado_em: str
 }
-
-class Pedido {
+class Pedido <<registro lógico>> {
   +id: int
-  +numero: string
-  +dataPedido: datetime
-  +status: string
-  +total: decimal
-  +criar()
-  +efetivar()
+  +numero: str
+  +id_cliente: int
+  +id_filial: int
+  +data_pedido: str
+  +status: str
+  +total: float
+  +observacao: str
+  +efetivado_em: str
 }
-
-class ItemPedido {
+class ItemPedido <<registro lógico>> {
   +id: int
+  +id_pedido: int
+  +id_produto: int
   +quantidade: int
-  +precoUnitario: decimal
-  +subtotal: decimal
+  +preco_unitario: float
+  +subtotal: float
 }
-
-Fornecedor "1" -- "0..*" Produto : fornece
+class Configuracao <<registro lógico>> {
+  +chave: str
+  +valor: str
+  +descricao: str
+}
+ExcelDB ..> Pedido : persiste
+ExcelDB ..> Configuracao : carrega
+Fornecedor "0..1" -- "0..*" Produto : fornece
 Cliente "1" -- "0..*" Pedido : realiza
 Filial "1" -- "0..*" Pedido : recebe
-Pedido "1" *-- "1..*" ItemPedido : possui
-Produto "1" -- "0..*" ItemPedido : compõe
+Pedido "1" *-- "1..*" ItemPedido : contém
+Produto "1" -- "0..*" ItemPedido : referencia
 @enduml

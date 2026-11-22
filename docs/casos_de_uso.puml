@@ -1,28 +1,34 @@
 @startuml
 left to right direction
 skinparam packageStyle rectangle
-skinparam actorStyle awesome
-
-actor Administrador as admin
-actor Atendente as attendant
-actor Gestor as manager
-
+actor "Operador" as operador
+actor "Administrador" as admin
 rectangle "Sistema Lanchonete Ágil" {
-  usecase "Gerenciar produtos" as UC1
-  usecase "Gerenciar clientes" as UC2
-  usecase "Gerenciar fornecedores" as UC3
-  usecase "Gerenciar filiais" as UC4
-  usecase "Criar pedido" as UC5
-  usecase "Efetivar pedido" as UC6
-  usecase "Consultar dashboard" as UC7
+  usecase "Consultar painel" as dashboard
+  usecase "Gerenciar produtos" as produtos
+  usecase "Gerenciar clientes" as clientes
+  usecase "Gerenciar fornecedores" as fornecedores
+  usecase "Gerenciar filiais" as filiais
+  usecase "Criar pedido" as criar
+  usecase "Listar e visualizar pedidos" as consultar
+  usecase "Efetivar pedido" as efetivar
+  usecase "Cancelar pedido" as cancelar
+  usecase "Excluir pedido" as excluir
+  usecase "Validar estoque" as estoque
+  usecase "Acessar painel administrativo" as login
+  usecase "Configurar funcionalidades" as configurar
 }
-
-admin --> UC1
-admin --> UC2
-admin --> UC3
-admin --> UC4
-attendant --> UC5
-attendant --> UC6
-manager --> UC7
-UC6 .> UC5 : <<inclui>>
+operador -- dashboard
+operador -- produtos
+operador -- clientes
+operador -- fornecedores
+operador -- filiais
+operador -- criar
+operador -- consultar
+operador -- efetivar
+operador -- cancelar
+operador -- excluir
+admin -- login
+admin -- configurar
+efetivar ..> estoque : <<include>>
 @enduml
